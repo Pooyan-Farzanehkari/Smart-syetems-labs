@@ -21,7 +21,7 @@ class DigitalTwin:
 
         # State configuration parameters
         self.steps = 0
-        self.theta = 1.5    #np.pi-0.01
+        self.theta = 0.   #np.pi-0.01
         self.theta_dot = 0.
         self.theta_double_dot = 0.
         self.x_pivot = 0
