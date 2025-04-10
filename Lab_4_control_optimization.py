@@ -52,7 +52,7 @@ class InvertedPendulumGA:
 
     def simulate(self, actions):
         """Simulate the inverted pendulum with the given actions and return a fitness score."""
-        self.digital_twin.theta = np.pi
+        self.digital_twin.theta = 0.
         self.digital_twin.theta_dot = 0.
         self.digital_twin.x_pivot = 0.
         self.digital_twin.steps = 0.
@@ -64,7 +64,7 @@ class InvertedPendulumGA:
                 action = action_list.pop(0)
                 direction, duration = self.digital_twin.action_map[action]
                 self.digital_twin.perform_action(direction, duration)
-            theta, theta_dot, x_pivot = self.digital_twin.step()
+            theta, theta_dot, x_pivot, _ = self.digital_twin.step()
             if abs(theta) > max_score:
                 max_score = abs(theta)
             if abs(self.digital_twin.x_pivot) > 99:
@@ -154,8 +154,8 @@ class InvertedPendulumGA:
 
 
 # Example usage
-ga = InvertedPendulumGA(population_size=4, num_actions=9, simulation_duration=2, action_resolution=0.2, simulation_delta_t=0.005)
-best_solution = ga.optimize(num_generations=10, fitness_threshold=np.pi)
+ga = InvertedPendulumGA(population_size=40, num_actions=9, simulation_duration=2, action_resolution=0.2, simulation_delta_t=0.005)
+best_solution = ga.optimize(num_generations=100, fitness_threshold=np.pi)
 
 print("Best Solution:", best_solution)
 

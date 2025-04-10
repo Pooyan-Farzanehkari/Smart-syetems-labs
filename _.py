@@ -171,8 +171,10 @@ class DigitalTwin:
         self.x_pivot = self.x_pivot + self.future_motor_positions.pop(0)/3
         # Update the system state based on the action and model dynamics
         self.theta_double_dot = self.get_theta_double_dot(self.theta, self.theta_dot)
-        self.theta += self.theta_dot * self.delta_t
+        
         self.theta_dot += self.theta_double_dot * self.delta_t
+        self.theta += self.theta_dot * self.delta_t
+
         self.time += self.delta_t
         self.steps += 1
         return self.theta, self.theta_dot, self.x_pivot
