@@ -21,7 +21,7 @@ class DigitalTwin:
 
         # State configuration parameters
         self.steps = 0
-        self.theta = 0 #np.pi-0.01
+        self.theta = np.pi-0.01
         self.theta_dot = 0.
         self.theta_double_dot = 0.
         self.x_pivot = 0
@@ -290,9 +290,9 @@ class DigitalTwin:
         #print(self.future_motor_accelerations)
         self.currentmotor_acceleration = self.future_motor_accelerations.pop(0)
         self.currentmotor_velocity = self.future_motor_velocities.pop(0)
-        print("old x pivot:", self.x_pivot)
+        # print("old x pivot:", self.x_pivot)
         self.x_pivot = self.x_pivot + self.R_pulley * self.future_motor_positions.pop(0)
-        print("new x pivot:", self.x_pivot)
+        # print("new x pivot:", self.x_pivot)
         # Update the system state based on the action and model dynamics
         self.theta_double_dot = self.get_theta_double_dot(self.theta, self.theta_dot)
         self.theta_dot += self.theta_double_dot * self.delta_t
