@@ -20,9 +20,26 @@ class InvertedPendulumGA:
         fitness_scores = self.evaluate_population()
         print(fitness_scores, "at start")
 
+class InvertedPendulumGA:
+    def __init__(self, population_size, num_actions, simulation_duration, action_resolution, simulation_delta_t):
+        self.digital_twin = DigitalTwin()
+        self.population_size = population_size
+        self.parent_pool_size = 2 #parent_pool_size
+        self.num_actions = num_actions
+        self.simulation_duration = simulation_duration
+        self.action_resolution = action_resolution
+        self.simulation_delta_t = simulation_delta_t
+        self.simulation_steps = simulation_duration/simulation_delta_t
+        self.num_steps = int(simulation_duration / action_resolution)
+        self.step_resolution = int(action_resolution / simulation_delta_t)
+        self.population = [self.create_individual() for _ in range(population_size)]
+        
+        fitness_scores = self.evaluate_population()
+        print(fitness_scores, "at start")
+
     def create_individual(self):
         """Create an individual sequence of actions with balanced left and right actions and boundary constraints."""
-        actions = np.zeros(self.num_steps, dtype=int)  # Start with neutral actions
+        actions = np.ones(self.num_steps, dtype=int)  # Start with ones instead of zeros
         # Initialize a variable to track the net movement direction and magnitude
         net_movement = 0  # Positive for right, negative for left
         
@@ -31,28 +48,27 @@ class InvertedPendulumGA:
                 # If net movement is within acceptable bounds, choose any action
                 action = np.random.randint(1, self.num_actions)
                 # Update net movement based on the chosen action
-                if action in [1, 2, 3, 4]:  # Left actions
+                if action in [1, 2, 3, 4,5,6,7,8,9,10,11,12]:  # Left actions
                     net_movement -= self.digital_twin.action_map[action][1]
                 else:  # Right actions
                     net_movement += self.digital_twin.action_map[action-4][1]
             elif net_movement >= 100:
                 # If net movement is too far right, choose a left action to balance
-                action = np.random.choice([1, 2, 3, 4])
+                action = np.random.choice([1, 2, 3, 4,5,6,7,8,9,10,11,12])
                 net_movement -= self.digital_twin.action_map[action][1]
             else:  # net_movement <= -150
                 # If net movement is too far left, choose a right action to balance
-                action = np.random.choice([5, 6, 7, 8])
+                action = np.random.choice([13,14,15,16,17,18,19,20,21,22,23,24])
                 net_movement += self.digital_twin.action_map[action-4][1]
 
             actions[i] = action
         
-        #print(actions)
         return actions
 
 
     def simulate(self, actions):
         """Simulate the inverted pendulum with the given actions and return a fitness score."""
-        self.digital_twin.theta = np.pi
+        self.digital_twin.theta = 0.
         self.digital_twin.theta_dot = 0.
         self.digital_twin.x_pivot = 0.
         self.digital_twin.steps = 0.
@@ -64,7 +80,7 @@ class InvertedPendulumGA:
                 action = action_list.pop(0)
                 direction, duration = self.digital_twin.action_map[action]
                 self.digital_twin.perform_action(direction, duration)
-            theta, theta_dot, x_pivot = self.digital_twin.step()
+            theta, theta_dot, x_pivot,_ = self.digital_twin.step()
             if abs(theta) > max_score:
                 max_score = abs(theta)
             if abs(self.digital_twin.x_pivot) > 99:
@@ -91,7 +107,7 @@ class InvertedPendulumGA:
         offspring = np.concatenate([parent1[:crossover_point], parent2[crossover_point:]])
         return offspring
 
-    def mutate(self, individual, mutation_rate=0.2):
+    def mutate(self, individual, mutation_rate=0.3):
         """Mutate an individual's actions with a given mutation rate."""
         for i in range(self.num_steps):
             if random.random() < mutation_rate:
@@ -154,8 +170,8 @@ class InvertedPendulumGA:
 
 
 # Example usage
-ga = InvertedPendulumGA(population_size=4, num_actions=9, simulation_duration=2, action_resolution=0.2, simulation_delta_t=0.005)
-best_solution = ga.optimize(num_generations=10, fitness_threshold=np.pi)
+ga = InvertedPendulumGA(population_size=100, num_actions=24, simulation_duration=2, action_resolution=0.2, simulation_delta_t=0.025)
+best_solution = ga.optimize(num_generations=10000, fitness_threshold=np.pi)
 
 print("Best Solution:", best_solution)
 
