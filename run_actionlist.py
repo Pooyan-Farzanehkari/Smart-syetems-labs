@@ -12,7 +12,7 @@ if __name__=='__main__':
         # Each action is performed after 200ms so that the actions do not overlap in time.
         # Can also use your keyboard to manually control the system.
 
-        actions =  [14, 2, 4, 4, 18, 22, 8, 13, 14, 3]                
+        actions = [1 ,5 ,8 ,1 ,4 ,1 ,1 ,5 ,6 ,1]  
         #digital_twin.start_recording("test_data_3")
         while running:
             # Perform action after 200ms > one step in the dt simulation is delta_t,  

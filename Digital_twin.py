@@ -21,7 +21,7 @@ class DigitalTwin:
 
         # State configuration parameters
         self.steps = 0
-        self.theta = np.pi - 0.01
+        self.theta =0 
         self.theta_dot = 0.
         self.theta_double_dot = 0.
         self.x_pivot = 0
@@ -32,7 +32,7 @@ class DigitalTwin:
         self.l = 0.35      # Length of the pendulum (m)
         self.c_air = 0.005    # Air friction coefficient
         self.c_c = 0.00005      # Coulomb friction coefficient
-        self.a_m = 0.5     # Motor acceleration force tranfer coefficient
+        self.a_m = 0.2     # Motor acceleration force tranfer coefficient
         self.mc = 0.0       # Mass of the cart (kg)
         self.mp = 0.2      # Mass of the pendulum (kg)
         self.I = 0.001     # Moment of inertia of the pendulum (kg·m²)
@@ -42,7 +42,7 @@ class DigitalTwin:
         self.currentmotor_acceleration = 0.
         self.currentmotor_velocity = 0.
         self.time = 0.
-        self.R_pulley = 0.05
+        self.R_pulley = 0.04
         
         # Sensor data
         self.sensor_theta = 0
@@ -50,17 +50,20 @@ class DigitalTwin:
         self.current_action = 0
         
         # Create 15 different durations for each direction (25ms to 400ms)
-        durations = np.linspace(25,300, 12, dtype=int)
+        durations = 0
         
-        # Create action mappings
-        self.action_map = [('left', 0)]  # No action
-        # Add left actions (1-15)
-        for duration in durations:
-            self.action_map.append(('left', duration))
-        # Add right actions (16-30)
-        for duration in durations:
-            self.action_map.append(('right', duration))
-            
+        # Keyboard action mappings
+        
+        _action_durations = [200, 150, 100, 50]  # Durations in milliseconds
+        _keys_left = [pygame.K_a, pygame.K_s, pygame.K_d, pygame.K_f]
+        _keys_right = [pygame.K_SEMICOLON, pygame.K_l, pygame.K_k , pygame.K_j]
+        self.actions = {key: ('left', duration) for key, duration in zip(_keys_left, _action_durations)}
+        self.actions.update({key: ('right', duration) for key, duration in zip(_keys_right, _action_durations)})
+        self.action_map = [
+            ('left', 0),  # No action
+            ('left', 50), ('left', 100), ('left', 150), ('left', 200),
+            ('right', 50), ('right', 100), ('right', 150), ('right', 200)
+        ]
         self.recording = False
         self.writer = None
         self.start_time = 0.
@@ -177,6 +180,12 @@ class DigitalTwin:
         Compute motor acceleration using real physics (motor torque equation),
         and ensure proper deceleration using active braking.
         """
+        # Handle zero duration case
+        if duration <= 0:
+            self.future_motor_accelerations = [0]
+            self.future_motor_velocities = [0]
+            self.future_motor_positions = [0]
+            return
 
         # Convert direction to numerical value
         direction = -1 if direction == 'left' else 1
