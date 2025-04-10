@@ -25,17 +25,18 @@ delta_t = 0.025  # Time step
 sim_time = 0.025 * len(df_theta)  # Total time of the simulation
 
 # Define improved parameter ranges with higher resolution
-I_range = np.linspace(0.001, 0.4, 20)      # Reduced upper bound, increased resolution
-c_c_range = np.linspace(0.001, 0.5, 40)    # Increased upper bound, increased resolution  
+I_range = np.linspace(0.001, 0.002, 10)      # Reduced upper bound, increased resolution
+c_c_range = np.linspace(0.00001, 0.005, 10)    # Increased upper bound, increased resolution  
 g = 9.81                                   # Gravity constant
-mp_range = np.linspace(0.5, 2, 20)       # Expanded range in both directions, increased resolution
+mp_range = np.linspace(0.01, 0.2, 20)       # Expanded range in both directions, increased resolution
+l = 0.35
 
 def simulate_potential_model(theta, theta_dot, I, c_c, g, mp, theta_measurements):
     digital_twin.I = I
     digital_twin.c_c = c_c
     digital_twin.g = g
     digital_twin.mp = mp
-    l = digital_twin.l  # Get pendulum length from digital twin
+    digital_twin.l = l
 
     sim_measurements = []
     for _ in range(len(theta_measurements)):
@@ -158,8 +159,9 @@ theta_dot_sim = theta_dot
 simulated_theta_dot = []
 for i in range(len(df_theta)):
      theta_double_dot_sim = digital_twin.get_theta_double_dot(theta_sim, theta_dot_sim)
-     theta_sim += theta_dot_sim * delta_t
      theta_dot_sim += theta_double_dot_sim * delta_t
+     theta_sim += theta_dot_sim * delta_t
+
      simulated_theta.append(theta_sim)
      simulated_theta_dot.append(theta_dot_sim)
 
