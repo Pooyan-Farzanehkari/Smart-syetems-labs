@@ -21,22 +21,22 @@ class DigitalTwin:
 
         # State configuration parameters
         self.steps = 0
-        self.theta = 0.   #np.pi-0.01
+        self.theta = 0 #np.pi-0.01
         self.theta_dot = 0.
         self.theta_double_dot = 0.
         self.x_pivot = 0
-        self.delta_t = 0.005  # Example value, adjust as needed in seconds
+        self.delta_t = 0.025  # Example value, adjust as needed in seconds
         # self.delta_t = 0.0284  # Match sensor rate
         
         # Model parameters
         self.g = 9.8065     # Acceleration due to gravity (m/s^2)
-        self.l = 0.4      # Length of the pendulum (m)
+        self.l = 0.35      # Length of the pendulum (m)
         self.c_air = 0.05    # Air friction coefficient
         self.c_c = 0.05      # Coulomb friction coefficient
         self.a_m = 0.5     # Motor acceleration force tranfer coefficient
-        self.mc = 0.0       # Mass of the cart (kg)
+        self.mc = 0.3      # Mass of the cart (kg)
         self.mp = 1       # Mass of the pendulum (kg)
-        self.I = 0.00       # Moment of inertia of the pendulum (kg·m²)
+        self.I = 0.4       # Moment of inertia of the pendulum (kg·m²)
         self.future_motor_accelerations = []
         self.future_motor_positions = []
         self.future_motor_velocities = []
@@ -138,68 +138,40 @@ class DigitalTwin:
                 d = duration
             self.ser.write(str(d).encode())
         if duration > 0:
-            self.update_motor_accelerations_real(direction, duration/1000)
+            self.update_motor_accelerations(direction, duration/1000)
 
-    def update_motor_accelerations_real(self, direction, duration):
+    def update_motor_accelerations(self, direction, duration):
+        if direction == 'left':
+            direction = -1
+        else:
+            direction = 1
+
         """
-        Compute motor acceleration using real physics (motor torque equation),
-        and ensure proper deceleration using active braking.
+        Lab 1 & 3 bonus: Model the expected acceleration response of the motor.  
         """
-
-        # Convert direction to numerical value
-        direction = -1 if direction == 'left' else 1
-
-        # Motor parameters
-        k = 0.0174  # Motor torque constant (N·m/A)
-        J = 8.5075e-6  # Moment of inertia (kg·m²)
-        R = 8.18  # Motor resistance (Ω)
-        V_i = 12.0  # Input voltage (V)
-
-        # Define motion phases
-        t1 = duration / 4  # Acceleration phase
-        t2_d = duration / 4  # Deceleration phase
-        t2 = duration - t2_d  # Start of deceleration
-        tf = duration  # Total movement time
-        time_values = np.arange(0.0, tf + self.delta_t, self.delta_t)
-
-        omega_m = [0.0]  # Initial angular velocity
-
-        # Compute acceleration, velocity, and position for each time step
-        for t in time_values:
-            omega = omega_m[-1]  # Use last computed velocity
-
-            # Compute acceleration based on phase
-            if t < t1:  # Acceleration phase
-                a_m_1 =  (k * (V_i - k * omega)) / (J * R)
-                alpha_m = -4*direction*a_m_1/(t1*t1) * t * (t-t1)
-            elif t1 <= t < t2:  # Constant velocity phase
-                alpha_m = 0.0
-            else:  # Deceleration phase (Active braking)
-                a_m_2 = (k * (V_i + k * omega)) / (J * R)  # Apply braking force
-                alpha_m  = 4*direction*a_m_2/(t2_d*t2_d) * (t-t2) * (t-duration)
-                
-
-            self.future_motor_accelerations.append(alpha_m)
-
-            # Update omega using Euler integration
-            omega_next = omega + alpha_m * self.delta_t
-            omega_m.append(omega_next)
-
-        # print("omega based on integral")
-        # print(omega_m)
-        # Store values
-        # self.future_motor_velocities = omega_m[1:]  # Remove initial zero
-        self.future_motor_velocities = list(cumulative_trapezoid(self.future_motor_accelerations, dx=self.delta_t, initial=0))
-        # print("velocity based on integral")
-        # print(self.future_motor_velocities)
-        self.future_motor_positions = list(cumulative_trapezoid(self.future_motor_velocities, dx=self.delta_t, initial=0))
-
-        # Save acceleration, velocity, and position to CSV
-        with open("motor_data.csv", mode="w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(["time_s", "alpha_m_rad_s2", "omega_m_rad_s", "theta_m_rad"])
-            for i in range(len(time_values) - 2):  # Avoid index issues
-                writer.writerow([time_values[i], self.future_motor_accelerations[i], self.future_motor_velocities[i], self.future_motor_positions[i]])
+        a_m_1 = 0.05
+        a_m_2 = 0.05
+        t1 = duration/4
+        t2_d = duration/4
+        t2 = duration - t2_d
+        for t in np.arange(0.0, duration+self.delta_t, self.delta_t):
+            if t <= t1:
+                c = -4*direction*a_m_1/(t1*t1) * t * (t-t1)
+            elif t < t2 and t > t1:
+                c = 0 
+            elif t >= t2:
+                c = 4*direction*a_m_2/(t2_d*t2_d) * (t-t2) * (t-duration)
+            
+            self.future_motor_accelerations.append(c)
+        
+        _velocity = cumulative_trapezoid(self.future_motor_accelerations,initial=0)
+        self.future_motor_positions = list(cumulative_trapezoid(_velocity,initial=0))
+        # # Save acceleration, velocity, and position to CSV
+        # with open("motor_data.csv", mode="w", newline="") as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(["time_s", "alpha_m_rad_s2", "omega_m_rad_s", "theta_m_rad"])
+        #     for i in range(len(time_values) - 2):  # Avoid index issues
+        #         writer.writerow([time_values[i], self.future_motor_accelerations[i], self.future_motor_velocities[i], self.future_motor_positions[i]])
 
     # def update_motor_accelerations_control(self, direction, duration):
 
@@ -297,7 +269,13 @@ class DigitalTwin:
         You should include the following constants as well: c_air, c_c, a_m, l and g. 
         """
         torque_gravity = -(self.mp * self.g * self.l / (self.I + self.mp * self.l**2)) * np.sin(theta)
-        torque_air_friction = -(self.c_air / (self.I + self.mp * self.l**2)) * theta_dot
+        # torque_air_friction = -(self.c_air / (self.I + self.mp * self.l**2)) * theta_dot
+        torque_air_friction = 0
+        if abs(theta_dot) > 2:
+            torque_air_friction = -(self.c_air / (self.I + self.mp * self.l**2)) * theta_dot
+        elif abs(theta_dot) < 2:
+            torque_air_friction = -(self.c_air / (self.I + self.mp * self.l**2)) * theta_dot * 1.1
+
         torque_coulomb_friction = -(self.c_c / (self.I + self.mp * self.l**2)) * theta_dot
         # torque_motor = (-self.a_m * self.R_pulley * self.currentmotor_acceleration / self.l) * np.cos(theta)
         xdoubledot = self.a_m * self.R_pulley * self.currentmotor_acceleration
@@ -317,8 +295,9 @@ class DigitalTwin:
         print("new x pivot:", self.x_pivot)
         # Update the system state based on the action and model dynamics
         self.theta_double_dot = self.get_theta_double_dot(self.theta, self.theta_dot)
-        self.theta += self.theta_dot * self.delta_t
         self.theta_dot += self.theta_double_dot * self.delta_t
+        self.theta += self.theta_dot * self.delta_t
+
         self.time += self.delta_t
         self.steps += 1
         return self.theta, self.theta_dot, self.x_pivot, self.currentmotor_acceleration
