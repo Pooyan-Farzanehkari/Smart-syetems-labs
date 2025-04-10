@@ -1,6 +1,6 @@
 import time
 import pygame
-from Digital_twin import DigitalTwin
+from Digital_twin_filtered import DigitalTwin
 
 # Before starting run pip install -r requirements.txt
 
